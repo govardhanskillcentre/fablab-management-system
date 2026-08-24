@@ -1,0 +1,94 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FabLab Management System</title><link rel="stylesheet" href="/static/style.css"></head><body><div class="app-shell">
+<aside class="sidebar">
+  <div class="side-brand"><div class="logo">FL</div><div><h1>FabLab</h1><span>Management System</span></div></div>
+  <div class="side-label">MAIN MENU</div>
+  <nav>
+    <button class="navactive" onclick="show('dashboard',this)"><span>▦</span> Dashboard</button>
+    <button onclick="show('purchase',this)"><span>＋</span> Purchase Material</button>
+    <button onclick="show('use',this)"><span>↘</span> Material Use</button>
+    <button onclick="show('product',this)"><span>▣</span> Product Costing</button>
+    <button onclick="show('sales',this)"><span>₹</span> Sales</button>
+    <button onclick="show('work',this)"><span>☷</span> Daily Work</button>
+    <button onclick="show('tasks',this)"><span>✓</span> Task System</button>
+  </nav>
+  <div class="side-footer"><div class="side-label">DATA</div><a href="/download/excel">↓ Download All Excel</a><small>SQLite database • Local system</small></div>
+</aside>
+<div class="content-shell">
+<header class="topbar"><div><strong>FabLab Management</strong><span>Inventory, costing, sales & operations</span></div><div class="top-actions"><label class="theme-picker">Theme <select id="themeSelect"><option value="blue">Blue</option><option value="slate">Slate</option><option value="green">Green</option><option value="purple">Purple</option><option value="amber">Amber</option></select></label><a class="excel-btn" href="/download/excel">↓ Download All Data</a><button type="button" class="logout-btn" onclick="logoutUser()">↪ Logout</button></div></header>
+<main>
+<section id="dashboard" class="page active">
+ <div class="pagehead"><div><span class="eyebrow">Overview</span><h2>Dashboard</h2><p>Professional view of your FabLab activity and stock.</p></div>
+ <div class="date-tools"><button class="chip active" onclick="dashPreset('today',this)">Today</button><button class="chip" onclick="dashPreset('all',this)">All Time</button><label>From <input id="dashFrom" type="date"></label><label>To <input id="dashTo" type="date"></label><button class="primary small" onclick="loadDashboard()">Apply</button><a id="rangeExcel" class="secondary small" href="/download/excel">↓ Excel</a>
+ <button class="secondary small" type="button" onclick="toggleDashSettings()">⚙ Show / Hide</button></div></div>
+ <div id="dashSettings" class="dashboard-settings" hidden>
+   <b>Dashboard data visibility</b>
+   <button type="button" onclick="toggleDash('cards')">Summary Cards</button>
+   <button type="button" onclick="toggleDash('stockPanel')">Material Stock</button>
+   <button type="button" onclick="toggleDash('unpaidPanel')">Unpaid Bills</button>
+   <button type="button" onclick="toggleDash('taskPanel')">Pending Tasks</button>
+   <button type="button" onclick="toggleDash('workPanel')">Recent Daily Work</button>
+ </div>
+ <div id="dashCards" class="cards"><div><b>Stock Value</b><strong id="stockValue">₹0.00</strong><small>Current remaining stock</small></div><div><b>Purchases</b><strong id="purchaseTotal">₹0.00</strong><small>Selected period</small></div><div><b>Sales</b><strong id="salesTotal">₹0.00</strong><small>Selected period</small></div><div><b>Sales Profit</b><strong id="salesProfit">₹0.00</strong><small>Estimated product profit</small></div><div><b>Unpaid Bills</b><strong id="unpaid">₹0.00</strong><small>Selected period</small></div><div><b>Total Machine Use</b><strong id="machineTime">0 min</strong><small>Total product machine time</small></div></div>
+ <div class="grid2">
+ <div id="stockPanel" class="panel"><div class="panelhead"><div><h3>Material Stock</h3><p>Purchased, used and remaining stock.</p></div><input id="stockSearch" class="search" placeholder="Search material..." oninput="renderStock()"></div><div class="tablewrap"><table id="stockTable"></table></div></div><div id="unpaidPanel" class="panel"><div class="panelhead"><div><h3>Unpaid Bills</h3><p>Customer name and total outstanding amount.</p></div></div><div class="tablewrap"><table id="unpaidTable"></table></div></div></div>
+ <div id="taskPanel" class="panel dashboard-task"><div class="panelhead"><div><h3>Pending Tasks</h3><p>Tasks that still need action.</p></div></div><div class="tablewrap"><table id="pendingTasks"></table></div></div>
+ <div id="workPanel" class="panel dashboard-work"><div class="panelhead"><div><h3>Recent Daily Work</h3><p>Latest selected-period activity.</p></div></div><div class="tablewrap"><table id="recentWork"></table></div></div>
+</section>
+<section id="purchase" class="page"><div class="pagehead"><div><span class="eyebrow">Inventory</span><h2>Purchase Material</h2><p>Every purchase gets an automatic Material ID.</p></div></div>
+<form id="purchaseForm"><div class="field"><label>Material ID <span>Auto</span></label><input id="materialId" readonly></div><div class="field"><label>Date</label><input name="date" type="date" value="{{today}}" required></div><div class="field"><label>Material Name</label><input name="material_name" placeholder="MDF 3mm" required></div><div class="field"><label>Material Type</label><select name="material_type"><option>Hardware</option><option>Electronic</option><option>Stationary</option><option>Stock</option></select></div><div class="field"><label>Quantity</label><input name="qty" type="number" step="0.0001" min="0" required></div><div class="field"><label>Unit</label><select name="unit"><option>sq.ft</option><option>sq.cm</option><option>liter</option></select></div><div class="field"><label>Rate / Unit</label><input name="rate" type="number" step="0.01" min="0" required></div><div class="field"><label>Seller Name</label><input name="seller" placeholder="Supplier"></div><div class="field wide"><label>Note</label><input name="note" placeholder="Optional note"></div><div class="formaction"><div class="calc">Total Amount <b id="purchaseTotalForm">₹0.00</b></div><button class="primary">Save Purchase</button></div></form>
+<div class="panel"><div class="panelhead"><div><h3>Purchase History</h3><p>Edit or delete any previous entry.</p></div><input id="purchaseTableSearch" class="search" placeholder="Search purchase history..." oninput="filterHistory('purchaseTable')"></div><div class="tablewrap"><table id="purchaseTable"></table></div></div></section>
+<section id="use" class="page"><div class="pagehead"><div><span class="eyebrow">Inventory</span><h2>Material Use</h2><p>Record material consumption. Cost is calculated automatically from purchase rates.</p></div></div>
+<form id="useForm"><div class="field"><label>Use ID <span>Auto</span></label><input id="useId" readonly></div><div class="field"><label>Date</label><input name="date" type="date" value="{{today}}" required></div><div class="field wide"><label>Material</label><select name="material_name" id="useMaterial" required></select></div><div class="field"><label>Quantity Used</label><input name="qty" type="number" step="0.0001" min="0.0001" required></div><div class="field"><label>Unit</label><input name="unit" id="useUnit" readonly></div><div class="field"><label>Work Type</label><select name="work_type"><option>Sell</option><option>Education</option><option>Service</option><option>Production</option><option>Project Work</option><option>Other</option></select></div><div class="field"><label>Calculated Material Cost</label><input id="useAmount" readonly value="₹0.00"></div><div class="field wide"><label>Work Details</label><textarea name="work" placeholder="Where was this material used?"></textarea></div><div class="formaction"><div class="stockhint" id="remainHint">Select a material.</div><button class="primary">Record Material Use</button></div></form>
+<div class="panel"><div class="panelhead"><div><h3>Material Use History</h3><p>Select multiple Use IDs to see their total cost.</p></div><div class="history-tools"><input id="useTableSearch" class="search" placeholder="Search material use..." oninput="filterHistory('useTable')"><strong id="useSelectedTotal">0 selected • ₹0.00</strong></div></div><div class="tablewrap"><table id="useTable"></table></div></div></section>
+<section id="product" class="page"><div class="pagehead"><div><span class="eyebrow">Pricing</span><h2>Product Costing</h2><p>Search by <b>Material Use ID</b>, select the used materials, then create the Product ID.</p></div></div>
+<form id="productForm"><div class="field"><label>Product ID <span>Auto</span></label><input id="productId" readonly></div><div class="field"><label>Date</label><input name="date" type="date" value="{{today}}" required></div><div class="field wide"><label>Product Name</label><input name="product_name" placeholder="MDF Trophy" required></div>
+<div class="field"><label>Machine</label><select name="machine_name" id="productMachine"><option value="">No Machine</option><option>Laser Cutting Machine</option><option>CNC Router</option><option>3D Printer</option><option>Vinyl Cutter</option><option>Other Machine</option></select></div><div class="field"><label>Machine Time (minutes)</label><input name="machine_minutes" id="productMachineMinutes" type="number" min="0" step="0.1" value="0"></div><div class="field"><label>Machine Rate / Hour</label><input name="machine_rate_hour" id="productMachineRate" type="number" min="0" step="0.01" value="0"></div><div class="field"><label>Machine Charge</label><input id="productMachineCharge" readonly value="₹0.00"></div>
+<div class="material-section"><div class="sectiontitle"><div><b>Material Use IDs</b><small>Search a Use ID or material name. Only unassigned material-use records are shown.</small></div><button type="button" class="secondary small" onclick="addMaterialRow()">＋ Add Material Use</button></div><div id="materialsBox"></div></div>
+<div class="field"><label>Labour %</label><input name="labour_percent" type="number" step="0.01" min="0" value="10"></div><div class="field"><label>Profit %</label><input name="profit_percent" type="number" step="0.01" min="0" value="20"></div><div class="field"><label>Fixed Profit</label><input name="profit_fixed" type="number" step="0.01" min="0" value="0"></div>
+<div class="costbox"><span>Material Cost <b id="matCost">₹0.00</b></span><span>Machine Cost <b id="machineCost">₹0.00</b></span><span>Labour <b id="labCost">₹0.00</b></span><span>Profit <b id="profitCost">₹0.00</b></span><span class="final">Final Product Price <b id="finalCost">₹0.00</b></span></div>
+<div class="formaction"><span class="muted">Material + Machine + Labour + Profit = Final Product Price</span><button class="primary">Create Product</button></div></form>
+<div class="panel"><div class="panelhead"><div><h3>Product Costing History</h3><p>Edit product costing whenever required.</p></div><input id="productTableSearch" class="search" placeholder="Search product history..." oninput="filterHistory('productTable')"></div><div class="tablewrap"><table id="productTable"></table></div></div></section>
+<section id="sales" class="page"><div class="pagehead"><div><span class="eyebrow">Revenue</span><h2>Sales</h2><p>Choose a Product ID created in Product Costing and make the sale.</p></div></div>
+<form id="salesForm"><div class="field"><label>Sales ID <span>Auto</span></label><input id="saleId" readonly></div><div class="field"><label>Date</label><input name="date" type="date" value="{{today}}" required></div><div class="field wide"><label>Customer</label><input name="customer" placeholder="Customer name"></div><div class="field wide"><label>Product ID</label><select name="product_id" id="saleProduct" required></select></div><div class="field"><label>Qty</label><input name="qty" id="saleQty" type="number" step="0.01" min="0.01" value="1" required></div><div class="field"><label>Rate / Product</label><input name="rate" id="saleRate" type="number" step="0.01" min="0" required></div><div class="field"><label>Status</label><select name="status"><option value="paid">Paid</option><option value="unpaid">Unpaid</option></select></div><div class="field wide"><label>Remark</label><input name="remark" placeholder="Optional remark"></div><div class="formaction"><div class="calc">Sale Amount <b id="saleAmount">₹0.00</b></div><button class="primary">Save Sale</button></div></form>
+<div class="panel"><div class="panelhead"><div><h3>Sales History</h3><p>Edit customer, amount and paid/unpaid status.</p></div><input id="salesTableSearch" class="search" placeholder="Search customer / bill / product..." oninput="filterHistory('salesTable')"></div><div class="tablewrap"><table id="salesTable"></table></div></div></section>
+<section id="tasks" class="page"><div class="pagehead"><div><span class="eyebrow">Operations</span><h2>Task System</h2><p>Create tasks, track priority/status and connect them with Daily Work.</p></div></div>
+<form id="taskForm"><div class="field"><label>Task ID <span>Auto</span></label><input id="taskId" readonly></div>
+<div class="field"><label>Date</label><input name="date" type="date" value="{{today}}" required></div>
+<div class="field wide"><label>Task Title</label><input name="title" placeholder="Prepare DBRT A batch lecture" required></div>
+<div class="field wide"><label>Description</label><textarea name="description" placeholder="What needs to be done?"></textarea></div>
+<div class="field"><label>Priority</label><select name="priority"><option>High</option><option selected>Medium</option><option>Low</option></select></div>
+<div class="field"><label>Status</label><select name="status"><option>Pending</option><option>In Progress</option><option>Completed</option></select></div>
+<div class="field"><label>Due Date</label><input name="due_date" type="date"></div>
+<div class="field wide"><label>Remark</label><input name="remark" placeholder="Optional remark"></div>
+<div class="formaction"><button class="primary">Create Task</button></div></form>
+<div class="panel"><div class="panelhead"><div><h3>Task History</h3><p>Edit task status, priority and details anytime.</p></div><input id="taskTableSearch" class="search" placeholder="Search tasks..." oninput="filterHistory('taskTable')"></div><div class="tablewrap"><table id="taskTable"></table></div></div></section>
+<section id="work" class="page"><div class="pagehead"><div><span class="eyebrow">Operations</span><h2>Daily Work</h2><p>Record teaching, production and project work.</p></div></div>
+<form id="workForm">
+<div class="work-entry-head"><div class="field"><label>Date</label><input name="date" type="date" value="{{today}}" required></div>
+<div class="field"><label>Task ID</label><select name="task_id" id="workTask"><option value="">No task</option></select></div>
+<div class="field"><label>Sales ID</label><select name="sales_id" id="workSale"><option value="">No sale</option></select></div></div>
+<div id="workRows">
+  <div class="work-row">
+    <div class="field"><label>Work Tag</label><select name="work_tag[]"><option>Teaching</option><option>Production</option><option>Other</option><option>Project Work</option><option>Service</option></select></div>
+    <div class="field wide"><label>Work Description</label><textarea name="work_describe[]" required placeholder="e.g. DBRT A Batch lecture on Arduino"></textarea></div>
+    <button type="button" class="remove work-remove" onclick="removeWorkRow(this)">×</button>
+  </div>
+</div>
+<div class="formaction work-actions"><button type="button" class="secondary" onclick="addWorkRow()">＋ Add Work</button><button class="primary">Save Daily Work</button></div></form>
+<div class="panel"><div class="panelhead"><div><h3>Daily Work History</h3><p>Edit any previous work entry.</p></div><input id="workTableSearch" class="search" placeholder="Search daily work..." oninput="filterHistory('workTable')"></div><div class="tablewrap"><table id="workTable"></table></div></div></section>
+</main></div></div>
+<div id="editModal" class="modal"><div class="modal-card"><div class="modal-head"><div><span class="eyebrow">Management</span><h3 id="editTitle">Edit Record</h3></div><button type="button" class="modal-close" onclick="closeEdit()">×</button></div><form id="editForm" class="edit-grid"></form></div></div>
+<div id="toast"></div><script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDGQ93ptLXzlIo1Hjddq8zhrLzWQeqnRXY",
+  authDomain: "fablab-database.firebaseapp.com",
+  projectId: "fablab-database",
+  storageBucket: "fablab-database.firebasestorage.app",
+  messagingSenderId: "814169448883",
+  appId: "1:814169448883:web:4f6f1c9b2d838b9bc7ebc6",
+  measurementId: "G-9DPK9W1LWV"
+};
+firebase.initializeApp(firebaseConfig);
+</script><script src="/static/app.js"></script></body></html>
